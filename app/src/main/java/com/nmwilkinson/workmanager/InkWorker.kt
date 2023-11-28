@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.time.measureTime
 
 class InkWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -25,10 +26,13 @@ class InkWorker(appContext: Context, workerParams: WorkerParameters) :
         val app = applicationContext as App
         Log.d("WRK", "starting recognition")
         app.viewModel.addString("Processing at ${dateFormatter.format(Date())}")
+        var results: String? = null
         inks.entries.forEach { (name, ink) ->
-            val recogniseResult = app.recogniser.recognize(ink).asCoroutine()
-            val results = recogniseResult?.candidates?.take(3)?.joinToString { it.text }
-            app.viewModel.addString("$name recognised as: $results")
+            val duration = measureTime {
+                val recogniseResult = app.recogniser.recognize(ink).asCoroutine()
+                results = recogniseResult?.candidates?.take(3)?.joinToString { it.text }
+            }
+            app.viewModel.addString("$name recognised as: $results (${duration.inWholeMilliseconds}ms)")
         }
         Result.success()
     }
